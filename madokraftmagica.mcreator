@@ -1,0 +1,54 @@
+{
+  "mod_elements": [
+    {
+      "name": "SoulGem",
+      "type": "item",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "soul_gem",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/madokraftmagica/models/item/soul_gem.json",
+          "src/main/java/net/mcreator/madokraftmagica/item/SoulGemItem.java"
+        ]
+      }
+    }
+  ],
+  "variable_elements": [],
+  "sound_elements": [],
+  "tag_elements": {},
+  "tab_element_order": {},
+  "language_map": {
+    "en_us": {
+      "item.madokraftmagica.soul_gem": "Soul Gem"
+    }
+  },
+  "metadata": {
+    "files": [
+      "src/main/resources/pack.mcmeta",
+      "src/main/java/net/mcreator/madokraftmagica/MadokraftmagicaMod.java",
+      "src/main/resources/META-INF/mods.toml",
+      "src/main/java/net/mcreator/madokraftmagica/init/MadokraftmagicaModItems.java"
+    ]
+  },
+  "foldersRoot": {
+    "name": "~",
+    "children": []
+  },
+  "workspaceSettings": {
+    "modid": "madokraftmagica",
+    "modName": "MadokraftMagica",
+    "version": "1.0.0",
+    "author": "MCreator",
+    "websiteURL": "https://mcreator.net",
+    "license": "Not specified",
+    "serverSideOnly": false,
+    "requiredMods": [],
+    "dependencies": [],
+    "dependants": [],
+    "mcreatorDependencies": [],
+    "currentGenerator": "forge-1.20.1",
+    "modElementsPackage": "net.mcreator.madokraftmagica"
+  },
+  "mcreatorVersion": 202500228610
+}
