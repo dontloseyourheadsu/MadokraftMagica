@@ -17,8 +17,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
-import net.mcreator.madokraftmagica.init.MadokraftmagicaModItems;
-import net.mcreator.madokraftmagica.init.MadokraftmagicaModTabs;
+import net.mcreator.madokraftmagica.gems.init.GemItems;
+import net.mcreator.madokraftmagica.gems.init.GemTabs;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -40,8 +40,8 @@ public class MadokraftmagicaMod {
 		MinecraftForge.EVENT_BUS.register(this);
 		IEventBus bus = context.getModEventBus();
 
-		MadokraftmagicaModItems.REGISTRY.register(bus);
-		MadokraftmagicaModTabs.REGISTRY.register(bus);
+		GemItems.REGISTRY.register(bus);
+		GemTabs.REGISTRY.register(bus);
 
 		// Start of user code block mod init
 		// End of user code block mod init

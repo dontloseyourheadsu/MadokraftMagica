@@ -1,4 +1,4 @@
-package net.mcreator.madokraftmagica.item;
+package net.mcreator.madokraftmagica.gems.item;
 
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.api.distmarker.Dist;
@@ -10,13 +10,13 @@ import net.minecraft.world.item.Item;
 import javax.annotation.Nonnull;
 
 public class BlueSoulGemItem extends Item {
-	public BlueSoulGemItem() {
-		super(new Item.Properties().stacksTo(64).rarity(Rarity.COMMON));
-	}
+    public BlueSoulGemItem() {
+        super(new Item.Properties().stacksTo(64).rarity(Rarity.COMMON));
+    }
 
-	@Override
-	@OnlyIn(Dist.CLIENT)
-	public boolean isFoil(@Nonnull ItemStack itemstack) {
-		return false;
-	}
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public boolean isFoil(@Nonnull ItemStack itemstack) {
+        return false;
+    }
 }
