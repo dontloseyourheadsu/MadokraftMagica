@@ -16,6 +16,7 @@ import net.mcreator.madokraftmagica.gems.item.BlueSoulGemItem;
 import net.mcreator.madokraftmagica.gems.item.YellowSoulGemItem;
 import net.mcreator.madokraftmagica.gems.item.GreenSoulGemItem;
 import net.mcreator.madokraftmagica.gems.item.PurpleSoulGemItem;
+import net.mcreator.madokraftmagica.kyubey.item.KyubeySpawnEggItem;
 
 public class GemItems {
     public static final DeferredRegister<Item> REGISTRY = DeferredRegister.create(ForgeRegistries.ITEMS,
@@ -33,6 +34,8 @@ public class GemItems {
             () -> new GreenSoulGemItem());
     public static final RegistryObject<Item> PURPLE_SOUL_GEM = REGISTRY.register("purple_soul_gem",
             () -> new PurpleSoulGemItem());
+    public static final RegistryObject<Item> KYUBEY_SPAWN_EGG = REGISTRY.register("kyubey_spawn_egg",
+            () -> new KyubeySpawnEggItem());
     // Start of user code block custom items
     // End of user code block custom items
 }

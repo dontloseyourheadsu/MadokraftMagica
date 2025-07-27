@@ -1,46 +1,81 @@
+buildscript {
+    repositories {
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven { url = 'https://maven.minecraftforge.net' }
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+'
+    }
+}
+
 plugins {
     id 'eclipse'
-    id 'net.neoforged.moddev.legacyforge' version '2.0.99'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '5.1.+'
 }
 
 version = '1.0'
-base.archivesName = "modid"
+archivesBaseName = 'madokraftmagica'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-legacyForge {
-    version = "1.20.1-47.4.0"
-
+minecraft {
+    mappings channel: 'official', version: '1.19.2'
+    
+    // Add this to force obfuscated names for compatibility
     runs {
         client {
-            client()
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
 
             def mcreatorJvmOptions = System.getenv('MCREATOR_JVM_OPTIONS')
             if (mcreatorJvmOptions) {
                 mcreatorJvmOptions.split("\\s+").findAll { it.trim() }.each { arg ->
-                    jvmArgument(arg)
+                    jvmArgs(arg)
+                }
+            }
+
+            mods {
+                madokraftmagica {
+                    source sourceSets.main
                 }
             }
         }
+
         server {
-            server()
-        }
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
 
-        configureEach {
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.DEBUG
+            mods {
+                madokraftmagica {
+                    source sourceSets.main
+                }
+            }
         }
     }
+}
 
-    mods {
-        mcreator {
-            sourceSet sourceSets.main
+repositories {
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content {
+            includeGroupByRegex("software\\.bernie.*")
+            includeGroup("com.eliotlash.mclib")
         }
     }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.19.2-43.3.13'
+    implementation fg.deobf("software.bernie.geckolib:geckolib-forge-1.19:3.1.40")
+    implementation("com.eliotlash.mclib:mclib:20")
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+    options.encoding = 'UTF-8'
 }
-
-apply from: 'mcreator.gradle'

@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[43,)"
 license="Not specified"
 
 [[mods]]
@@ -16,8 +16,15 @@ authors="MCreator"
 [[dependencies.madokraftmagica]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.20.1]"
+    versionRange="[1.19.2]"
     ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.madokraftmagica]]
+    modId="forge"
+    mandatory=true
+    versionRange="[43,)"
+    ordering="NONE"
     side="BOTH"
 
 

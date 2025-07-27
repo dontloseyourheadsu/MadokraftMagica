@@ -18,7 +18,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
 import net.mcreator.madokraftmagica.gems.init.GemItems;
-import net.mcreator.madokraftmagica.gems.init.GemTabs;
+// import net.mcreator.madokraftmagica.gems.init.GemTabs; // TODO: Fix Creative Tab for 1.19.2
+import net.mcreator.madokraftmagica.gems.init.GemEntities;
+import net.mcreator.madokraftmagica.kyubey.init.KyubeyEntities;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -34,14 +36,17 @@ public class MadokraftmagicaMod {
 	public static final Logger LOGGER = LogManager.getLogger(MadokraftmagicaMod.class);
 	public static final String MODID = "madokraftmagica";
 
-	public MadokraftmagicaMod(FMLJavaModLoadingContext context) {
+	public MadokraftmagicaMod() {
 		// Start of user code block mod constructor
 		// End of user code block mod constructor
+
 		MinecraftForge.EVENT_BUS.register(this);
-		IEventBus bus = context.getModEventBus();
+		IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
 
 		GemItems.REGISTRY.register(bus);
-		GemTabs.REGISTRY.register(bus);
+		// GemTabs.REGISTRY.register(bus); // 1.19.2 uses direct static registration
+		GemEntities.REGISTRY.register(bus);
+		KyubeyEntities.REGISTRY.register(bus);
 
 		// Start of user code block mod init
 		// End of user code block mod init
@@ -51,7 +56,7 @@ public class MadokraftmagicaMod {
 	// End of user code block mod methods
 	private static final String PROTOCOL_VERSION = "1";
 	public static final SimpleChannel PACKET_HANDLER = NetworkRegistry.newSimpleChannel(
-			ResourceLocation.fromNamespaceAndPath(MODID, MODID), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals,
+			new ResourceLocation(MODID, MODID), () -> PROTOCOL_VERSION, PROTOCOL_VERSION::equals,
 			PROTOCOL_VERSION::equals);
 	private static int messageID = 0;
 

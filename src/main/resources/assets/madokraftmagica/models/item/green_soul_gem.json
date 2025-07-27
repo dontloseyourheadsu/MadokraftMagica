@@ -1,6 +1,3 @@
 {
-  "parent": "item/generated",
-  "textures": {
-    "layer0": "madokraftmagica:item/gems/soulgem_green"
-  }
+  "parent": "madokraftmagica:item/gems/green_soul_gem"
 }

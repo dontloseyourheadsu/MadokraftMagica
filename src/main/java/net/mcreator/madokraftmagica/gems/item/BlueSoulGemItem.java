@@ -6,12 +6,13 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
+import net.mcreator.madokraftmagica.gems.init.GemTabs;
 
 import javax.annotation.Nonnull;
 
 public class BlueSoulGemItem extends Item {
     public BlueSoulGemItem() {
-        super(new Item.Properties().stacksTo(64).rarity(Rarity.COMMON));
+        super(new Item.Properties().tab(GemTabs.SOUL_GEMS).stacksTo(64).rarity(Rarity.COMMON));
     }
 
     @Override
