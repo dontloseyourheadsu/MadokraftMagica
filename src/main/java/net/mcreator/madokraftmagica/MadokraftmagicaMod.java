@@ -18,9 +18,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.FriendlyByteBuf;
 
 import net.mcreator.madokraftmagica.gems.init.GemItems;
-// import net.mcreator.madokraftmagica.gems.init.GemTabs; // TODO: Fix Creative Tab for 1.19.2
 import net.mcreator.madokraftmagica.gems.init.GemEntities;
 import net.mcreator.madokraftmagica.kyubey.init.KyubeyEntities;
+import net.mcreator.madokraftmagica.kyubey.init.KyubeyMenus;
+import net.mcreator.madokraftmagica.kyubey.network.ContractResponsePacket;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -47,6 +48,11 @@ public class MadokraftmagicaMod {
 		// GemTabs.REGISTRY.register(bus); // 1.19.2 uses direct static registration
 		GemEntities.REGISTRY.register(bus);
 		KyubeyEntities.REGISTRY.register(bus);
+		KyubeyMenus.REGISTRY.register(bus);
+
+		// Register network packet
+		addNetworkMessage(ContractResponsePacket.class, ContractResponsePacket::encode,
+				ContractResponsePacket::new, ContractResponsePacket::handle);
 
 		// Start of user code block mod init
 		// End of user code block mod init

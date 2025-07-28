@@ -20,6 +20,6 @@ public class KyubeyModel extends AnimatedGeoModel<KyubeyEntity> {
     @Override
     public ResourceLocation getAnimationResource(KyubeyEntity animatable) {
         return new ResourceLocation(MadokraftmagicaMod.MODID,
-                "animations/kyubey/kyubey.animation.json");
+                "animations/kyubey/kyubey_simple.animation.json");
     }
 }

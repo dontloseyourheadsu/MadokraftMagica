@@ -7,6 +7,7 @@ import net.mcreator.madokraftmagica.gems.init.GemTabs;
 
 public class KyubeySpawnEggItem extends SpawnEggItem {
     public KyubeySpawnEggItem() {
-        super(KyubeyEntities.KYUBEY.get(), 0xFFFFFF, 0xFF0000, new Item.Properties().tab(GemTabs.SOUL_GEMS).stacksTo(64));
+        super(KyubeyEntities.KYUBEY.get(), 0xFFFFFF, 0xFF0000,
+                new Item.Properties().tab(GemTabs.SOUL_GEMS).stacksTo(64));
     }
 }
