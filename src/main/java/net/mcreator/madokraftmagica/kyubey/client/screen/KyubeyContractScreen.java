@@ -6,6 +6,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
@@ -48,18 +49,34 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
     protected void init() {
         super.init();
         
-        // Try to load custom font at initialization
-        try {
-            // In Minecraft 1.19.2, we would need to access the font manager properly
-            // For now, we'll use the default font but the infrastructure is in place
-            // to swap it out when we get the custom font loading working
-            this.customFont = this.minecraft.font;
-        } catch (Exception e) {
-            this.customFont = this.minecraft.font;
-        }
+        // For Minecraft 1.19.2, we'll use a simpler approach
+        // The custom font will be loaded automatically by the game if the JSON is correct
+        // We can reference it using Component.literal().withStyle(Style.EMPTY.withFont(CUSTOM_FONT))
+        // For now, we'll use the default font but the infrastructure is ready for custom font
+        this.customFont = this.minecraft.font;
+        MadokraftmagicaMod.LOGGER.info("Using font for Kyubey screen");
         
         this.clearButtons();
         this.setupButtonsForCurrentState();
+    }
+    
+    // Helper method to create Component with custom font
+    private Component createTextWithCustomFont(String text) {
+        return Component.literal(text)
+            .withStyle(s -> s.withFont(CUSTOM_FONT));
+    }
+    
+    // Helper method to draw text with custom font
+    private void drawCustomText(PoseStack poseStack, String text, int x, int y, int color) {
+        Component component = Component.literal(text)
+            .withStyle(s -> s.withFont(CUSTOM_FONT));
+        this.font.draw(poseStack, component, x, y, color);
+    }
+    
+    // Helper method to get text width with custom font
+    private int getCustomTextWidth(String text) {
+        Component component = Component.literal(text); // Use default font for now
+        return this.font.width(component);
     }
     
     private void clearButtons() {
@@ -96,7 +113,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         int centerY = this.topPos + 80;
         
         Button yesButton = createStyledButton(centerX - 60, centerY, 50, 20,
-                Component.literal("Yes"), button -> {
+                createTextWithCustomFont("Yes"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.WISH_SELECTION);
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new KyubeyScreenStatePacket(this.menu.getKyubey().getId(), KyubeyScreenState.WISH_SELECTION));
@@ -105,7 +122,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 });
         
         Button noButton = createStyledButton(centerX + 10, centerY, 50, 20,
-                Component.literal("No"), button -> {
+                createTextWithCustomFont("No"), button -> {
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new ContractResponsePacket(this.menu.getKyubey().getId(), false));
                     this.onClose();
@@ -122,7 +139,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         int startY = this.topPos + 60;
         
         Button itemWishButton = createStyledButton(centerX - 80, startY, 160, 20,
-                Component.literal("Wish for Minecraft Item"), button -> {
+                createTextWithCustomFont("Wish for Minecraft Item"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.ITEM_WISH);
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new KyubeyScreenStatePacket(this.menu.getKyubey().getId(), KyubeyScreenState.ITEM_WISH));
@@ -131,7 +148,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 });
         
         Button entityWishButton = createStyledButton(centerX - 80, startY + 25, 160, 20,
-                Component.literal("Wish for Minecraft Entity"), button -> {
+                createTextWithCustomFont("Wish for Minecraft Entity"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.ENTITY_WISH);
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new KyubeyScreenStatePacket(this.menu.getKyubey().getId(), KyubeyScreenState.ENTITY_WISH));
@@ -140,7 +157,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 });
         
         Button eventWishButton = createStyledButton(centerX - 80, startY + 50, 160, 20,
-                Component.literal("Wish for Event Control"), button -> {
+                createTextWithCustomFont("Wish for Event Control"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.EVENT_WISH);
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new KyubeyScreenStatePacket(this.menu.getKyubey().getId(), KyubeyScreenState.EVENT_WISH));
@@ -149,7 +166,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 });
         
         Button cancelButton = createStyledButton(centerX - 30, startY + 80, 60, 20,
-                Component.literal("Cancel"), button -> {
+                createTextWithCustomFont("Cancel"), button -> {
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new ContractResponsePacket(this.menu.getKyubey().getId(), false));
                     this.onClose();
@@ -170,14 +187,14 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         int startY = this.topPos + 80;
         
         Button backButton = createStyledButton(centerX - 80, startY, 70, 20,
-                Component.literal("Back"), button -> {
+                createTextWithCustomFont("Back"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.WISH_SELECTION);
                     this.clearButtons();
                     this.setupButtonsForCurrentState();
                 });
         
         Button cancelButton = createStyledButton(centerX + 10, startY, 70, 20,
-                Component.literal("Cancel"), button -> {
+                createTextWithCustomFont("Cancel"), button -> {
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new ContractResponsePacket(this.menu.getKyubey().getId(), false));
                     this.onClose();
@@ -194,14 +211,14 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         int startY = this.topPos + 80;
         
         Button backButton = createStyledButton(centerX - 80, startY, 70, 20,
-                Component.literal("Back"), button -> {
+                createTextWithCustomFont("Back"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.WISH_SELECTION);
                     this.clearButtons();
                     this.setupButtonsForCurrentState();
                 });
         
         Button cancelButton = createStyledButton(centerX + 10, startY, 70, 20,
-                Component.literal("Cancel"), button -> {
+                createTextWithCustomFont("Cancel"), button -> {
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new ContractResponsePacket(this.menu.getKyubey().getId(), false));
                     this.onClose();
@@ -218,24 +235,24 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         int startY = this.topPos + 60;
         
         Button timeSetButton = createStyledButton(centerX - 80, startY, 160, 20,
-                Component.literal("Set Time Command"), button -> {
+                createTextWithCustomFont("Set Time Command"), button -> {
                     // Future implementation
                 });
         
         Button teleportButton = createStyledButton(centerX - 80, startY + 25, 160, 20,
-                Component.literal("Teleport to Position"), button -> {
+                createTextWithCustomFont("Teleport to Position"), button -> {
                     // Future implementation
                 });
         
         Button backButton = createStyledButton(centerX - 80, startY + 55, 70, 20,
-                Component.literal("Back"), button -> {
+                createTextWithCustomFont("Back"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.WISH_SELECTION);
                     this.clearButtons();
                     this.setupButtonsForCurrentState();
                 });
         
         Button cancelButton = createStyledButton(centerX + 10, startY + 55, 70, 20,
-                Component.literal("Cancel"), button -> {
+                createTextWithCustomFont("Cancel"), button -> {
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new ContractResponsePacket(this.menu.getKyubey().getId(), false));
                     this.onClose();
@@ -263,7 +280,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 
                 // Draw button text with custom font
                 int textColor = this.active ? TEXT_COLOR : 0xFF666666;
-                drawCenteredString(poseStack, customFont, this.getMessage(), 
+                drawCenteredString(poseStack, minecraft.font, this.getMessage(), 
                     this.x + this.width / 2, this.y + (this.height - 8) / 2, textColor);
             }
         };
@@ -321,27 +338,27 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         
         switch (state) {
             case CONTRACT_CONFIRMATION:
-                title = Component.literal("Wanna make a contract?");
+                title = createTextWithCustomFont("Wanna make a contract?");
                 break;
             case WISH_SELECTION:
-                title = Component.literal("Make a Wish");
+                title = createTextWithCustomFont("Make a Wish");
                 break;
             case ITEM_WISH:
-                title = Component.literal("Wish for an Item");
+                title = createTextWithCustomFont("Wish for an Item");
                 break;
             case ENTITY_WISH:
-                title = Component.literal("Wish for an Entity");
+                title = createTextWithCustomFont("Wish for an Entity");
                 break;
             case EVENT_WISH:
-                title = Component.literal("Wish for Event Control");
+                title = createTextWithCustomFont("Wish for Event Control");
                 break;
             default:
-                title = Component.literal("Kyubey");
+                title = createTextWithCustomFont("Kyubey");
                 break;
         }
         
-        int titleX = (this.imageWidth - this.customFont.width(title)) / 2;
-        this.customFont.draw(poseStack, title, titleX, 15, TEXT_COLOR);
+        int titleX = (this.imageWidth - this.font.width(title)) / 2;
+        this.font.draw(poseStack, title, titleX, 15, TEXT_COLOR);
     }
 
     @Override
