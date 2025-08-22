@@ -1,0 +1,15 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "madokraftmagica:hangyaku-g3rpg.ttf",
+      "shift": [0, 0],
+      "size": 12.0,
+      "oversample": 2.0
+    },
+    {
+      "type": "space",
+      "advances": { " ": 4, "\u2009": 2 }
+    }
+  ]
+}

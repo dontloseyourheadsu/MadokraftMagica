@@ -1,0 +1,15 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "madokraftmagica:gd-madomaru.ttf",
+      "shift": [0, 0],
+      "size": 14.0,
+      "oversample": 2.0
+    },
+    {
+      "type": "space",
+      "advances": { " ": 4, "\u2009": 2 }
+    }
+  ]
+}
