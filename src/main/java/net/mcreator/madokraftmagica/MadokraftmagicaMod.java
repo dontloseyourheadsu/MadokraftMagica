@@ -22,6 +22,7 @@ import net.mcreator.madokraftmagica.gems.init.GemEntities;
 import net.mcreator.madokraftmagica.kyubey.init.KyubeyEntities;
 import net.mcreator.madokraftmagica.kyubey.init.KyubeyMenus;
 import net.mcreator.madokraftmagica.kyubey.network.ContractResponsePacket;
+import net.mcreator.madokraftmagica.kyubey.network.KyubeyScreenStatePacket;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -50,9 +51,11 @@ public class MadokraftmagicaMod {
 		KyubeyEntities.REGISTRY.register(bus);
 		KyubeyMenus.REGISTRY.register(bus);
 
-		// Register network packet
+		// Register network packets
 		addNetworkMessage(ContractResponsePacket.class, ContractResponsePacket::encode,
 				ContractResponsePacket::new, ContractResponsePacket::handle);
+		addNetworkMessage(KyubeyScreenStatePacket.class, KyubeyScreenStatePacket::encode,
+				KyubeyScreenStatePacket::new, KyubeyScreenStatePacket::handle);
 
 		// Start of user code block mod init
 		// End of user code block mod init
