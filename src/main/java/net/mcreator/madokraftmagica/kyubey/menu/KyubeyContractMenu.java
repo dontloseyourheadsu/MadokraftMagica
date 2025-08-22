@@ -6,11 +6,13 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.mcreator.madokraftmagica.kyubey.entity.KyubeyEntity;
 import net.mcreator.madokraftmagica.kyubey.init.KyubeyMenus;
+import net.mcreator.madokraftmagica.kyubey.client.screen.KyubeyScreenState;
 
 import javax.annotation.Nonnull;
 
 public class KyubeyContractMenu extends AbstractContainerMenu {
     private final KyubeyEntity kyubey;
+    private KyubeyScreenState currentState = KyubeyScreenState.CONTRACT_CONFIRMATION;
 
     public KyubeyContractMenu(int containerId, Inventory playerInventory, KyubeyEntity kyubey) {
         super(KyubeyMenus.KYUBEY_CONTRACT.get(), containerId);
@@ -40,5 +42,13 @@ public class KyubeyContractMenu extends AbstractContainerMenu {
 
     public KyubeyEntity getKyubey() {
         return this.kyubey;
+    }
+
+    public KyubeyScreenState getCurrentState() {
+        return this.currentState;
+    }
+
+    public void setCurrentState(KyubeyScreenState state) {
+        this.currentState = state;
     }
 }
