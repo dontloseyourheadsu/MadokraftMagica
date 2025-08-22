@@ -1,9 +1,12 @@
 package net.mcreator.madokraftmagica.kyubey.client.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -26,17 +29,35 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
     private static final int BUTTON_BORDER_COLOR = 0xFFAE935E; // Golden button border
     private static final int TEXT_COLOR = 0xFF000000; // Black text
     
+    // Custom font
+    private static final ResourceLocation CUSTOM_FONT = new ResourceLocation(MadokraftmagicaMod.MODID, "hangyaku");
+    private Font customFont;
+    
     private List<Button> currentButtons = new ArrayList<>();
 
     public KyubeyContractScreen(KyubeyContractMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 240;
         this.imageHeight = 180;
+        
+        // Initialize with default font, will be updated when screen is shown
+        this.customFont = Minecraft.getInstance().font;
     }
-
+    
     @Override
     protected void init() {
         super.init();
+        
+        // Try to load custom font at initialization
+        try {
+            // In Minecraft 1.19.2, we would need to access the font manager properly
+            // For now, we'll use the default font but the infrastructure is in place
+            // to swap it out when we get the custom font loading working
+            this.customFont = this.minecraft.font;
+        } catch (Exception e) {
+            this.customFont = this.minecraft.font;
+        }
+        
         this.clearButtons();
         this.setupButtonsForCurrentState();
     }
@@ -237,15 +258,39 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 // Draw button background
                 fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, BUTTON_COLOR);
                 
-                // Draw button border
-                drawBorder(poseStack, this.x, this.y, this.width, this.height, BUTTON_BORDER_COLOR);
+                // Draw double button border
+                drawDoubleBorder(poseStack, this.x, this.y, this.width, this.height, BUTTON_BORDER_COLOR);
                 
-                // Draw button text
+                // Draw button text with custom font
                 int textColor = this.active ? TEXT_COLOR : 0xFF666666;
-                drawCenteredString(poseStack, minecraft.font, this.getMessage(), 
+                drawCenteredString(poseStack, customFont, this.getMessage(), 
                     this.x + this.width / 2, this.y + (this.height - 8) / 2, textColor);
             }
         };
+    }
+    
+    private void drawDoubleBorder(PoseStack poseStack, int x, int y, int width, int height, int color) {
+        // Outer border
+        // Top border
+        fill(poseStack, x, y, x + width, y + 1, color);
+        // Bottom border
+        fill(poseStack, x, y + height - 1, x + width, y + height, color);
+        // Left border
+        fill(poseStack, x, y, x + 1, y + height, color);
+        // Right border
+        fill(poseStack, x + width - 1, y, x + width, y + height, color);
+        
+        // Inner border (2 pixels inside the outer border)
+        if (width > 4 && height > 4) {
+            // Top inner border
+            fill(poseStack, x + 2, y + 2, x + width - 2, y + 3, color);
+            // Bottom inner border
+            fill(poseStack, x + 2, y + height - 3, x + width - 2, y + height - 2, color);
+            // Left inner border
+            fill(poseStack, x + 2, y + 2, x + 3, y + height - 2, color);
+            // Right inner border
+            fill(poseStack, x + width - 3, y + 2, x + width - 2, y + height - 2, color);
+        }
     }
     
     private void drawBorder(PoseStack poseStack, int x, int y, int width, int height, int color) {
@@ -265,8 +310,8 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         fill(poseStack, this.leftPos, this.topPos, this.leftPos + this.imageWidth, this.topPos + this.imageHeight,
                 BACKGROUND_COLOR);
         
-        // Golden border
-        drawBorder(poseStack, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, BORDER_COLOR);
+        // Double Golden border
+        drawDoubleBorder(poseStack, this.leftPos, this.topPos, this.imageWidth, this.imageHeight, BORDER_COLOR);
     }
 
     @Override
@@ -295,8 +340,8 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 break;
         }
         
-        int titleX = (this.imageWidth - this.font.width(title)) / 2;
-        this.font.draw(poseStack, title, titleX, 15, TEXT_COLOR);
+        int titleX = (this.imageWidth - this.customFont.width(title)) / 2;
+        this.customFont.draw(poseStack, title, titleX, 15, TEXT_COLOR);
     }
 
     @Override
