@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.madokraftmagica.kyubey.entity.KyubeyEntity;
+import net.mcreator.madokraftmagica.MadokraftmagicaMod;
 
 import java.util.function.Supplier;
 
@@ -19,12 +20,19 @@ public class ItemWishPacket {
 
     public ItemWishPacket(int kyubeyId, Item item) {
         this.kyubeyId = kyubeyId;
-        this.itemId = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation tempId = ForgeRegistries.ITEMS.getKey(item);
+        this.itemId = tempId != null ? tempId : new ResourceLocation("minecraft:air");
+        
+        // Debug: Log what we're sending
+        MadokraftmagicaMod.LOGGER.info("ItemWishPacket created with item: {} for item object: {}", 
+                this.itemId.toString(), item.getClass().getSimpleName());
     }
 
     public ItemWishPacket(FriendlyByteBuf buffer) {
         this.kyubeyId = buffer.readInt();
-        this.itemId = buffer.readResourceLocation();
+        ResourceLocation tempId = buffer.readResourceLocation();
+        this.itemId = tempId != null ? tempId : new ResourceLocation("minecraft:air");
+        MadokraftmagicaMod.LOGGER.info("ItemWishPacket decoded with item ID: {}", this.itemId.toString());
     }
 
     public void encode(FriendlyByteBuf buffer) {
@@ -43,22 +51,32 @@ public class ItemWishPacket {
                     kyubey.endInteraction();
 
                     // Get the item from the registry
+                    MadokraftmagicaMod.LOGGER.info("Server received ItemWishPacket with item ID: {}", 
+                            this.itemId != null ? this.itemId.toString() : "null");
                     Item wishedItem = ForgeRegistries.ITEMS.getValue(this.itemId);
-                    if (wishedItem != null) {
-                        // Create the item stack
-                        ItemStack itemStack = new ItemStack(wishedItem, 1);
-                        
-                        // Add the item to player's inventory
+                    MadokraftmagicaMod.LOGGER.info("Retrieved item from registry: {}", 
+                            wishedItem != null ? wishedItem.toString() : "null");
+                    
+                    if (wishedItem != null && wishedItem != net.minecraft.world.item.Items.AIR) {
+                        ItemStack itemStack = new ItemStack(wishedItem);
+
+                        // Capture the name BEFORE mutating the stack
+                        Component itemName = itemStack.getHoverName().copy();
+
+                        // Try to add; if full, drop the same stack
                         if (!player.getInventory().add(itemStack)) {
-                            // If inventory is full, drop the item
                             player.drop(itemStack, false);
                         }
-                        
-                        // Send success message
-                        String itemName = itemStack.getHoverName().getString();
-                        player.sendSystemMessage(Component.literal("Your wish has been granted! You received: " + itemName));
+
+                        player.sendSystemMessage(
+                            Component.literal("Your wish has been granted! You received: ")
+                                .append(itemName)
+                        );
                     } else {
-                        player.sendSystemMessage(Component.literal("Something went wrong with your wish..."));
+                        player.sendSystemMessage(Component.literal(
+                            "Something went wrong with your wish... Item ID: " +
+                            (this.itemId != null ? this.itemId.toString() : "null")
+                        ));
                     }
                 }
             }
