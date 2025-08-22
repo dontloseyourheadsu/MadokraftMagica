@@ -18,6 +18,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.madokraftmagica.kyubey.menu.KyubeyContractMenu;
 import net.mcreator.madokraftmagica.kyubey.network.ContractResponsePacket;
+import net.mcreator.madokraftmagica.kyubey.network.ItemWishPacket;
 import net.mcreator.madokraftmagica.kyubey.network.KyubeyScreenStatePacket;
 import net.mcreator.madokraftmagica.MadokraftmagicaMod;
 
@@ -331,9 +332,9 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         Button makeWishButton = createStyledButton(centerX - 80, bottomY, 70, 20,
                 createTextWithCustomFont("MAKE WISH"), button -> {
                     if (this.selectedItem != null) {
-                        // TODO: Send packet to server with selected item
+                        // Send the item wish packet with the selected item
                         MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
-                                new ContractResponsePacket(this.menu.getKyubey().getId(), true));
+                                new ItemWishPacket(this.menu.getKyubey().getId(), this.selectedItem));
                         this.onClose();
                     }
                 });
