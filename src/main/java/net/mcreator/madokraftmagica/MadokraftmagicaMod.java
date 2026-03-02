@@ -24,6 +24,7 @@ import net.mcreator.madokraftmagica.kyubey.init.KyubeyMenus;
 import net.mcreator.madokraftmagica.kyubey.network.ContractResponsePacket;
 import net.mcreator.madokraftmagica.kyubey.network.ItemWishPacket;
 import net.mcreator.madokraftmagica.kyubey.network.KyubeyScreenStatePacket;
+import net.mcreator.madokraftmagica.kyubey.network.EntityWishPacket;
 
 import java.util.function.Supplier;
 import java.util.function.Function;
@@ -59,6 +60,8 @@ public class MadokraftmagicaMod {
 				KyubeyScreenStatePacket::new, KyubeyScreenStatePacket::handle);
 		addNetworkMessage(ItemWishPacket.class, ItemWishPacket::encode,
 				ItemWishPacket::new, ItemWishPacket::handle);
+		addNetworkMessage(EntityWishPacket.class, EntityWishPacket::encode,
+				EntityWishPacket::new, EntityWishPacket::handle);
 
 		// Start of user code block mod init
 		// End of user code block mod init
