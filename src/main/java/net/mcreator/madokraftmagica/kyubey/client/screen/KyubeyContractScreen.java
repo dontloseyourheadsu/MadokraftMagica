@@ -8,10 +8,12 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.core.Registry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -24,6 +26,7 @@ import net.mcreator.madokraftmagica.MadokraftmagicaMod;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
@@ -50,6 +53,13 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
     private static final int ITEMS_PER_PAGE = 4; // Reduced from 6 to 4 to make room for bottom buttons
     private static final int ITEM_BUTTON_HEIGHT = 18;
 
+    // Entity selection state
+    private List<EntityType<?>> availableEntities = new ArrayList<>();
+    private EntityType<?> selectedEntity = null;
+    private int entityScrollOffset = 0;
+    private static final int ENTITIES_PER_PAGE = 4;
+    private static final int ENTITY_BUTTON_HEIGHT = 18;
+
     public KyubeyContractScreen(KyubeyContractMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 240;
@@ -75,6 +85,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         
         // Initialize available items list
         this.initializeAvailableItems();
+        this.initializeAvailableEntities();
     }
     
     private void initializeAvailableItems() {
@@ -122,7 +133,17 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         this.availableItems.add(Items.ANCIENT_DEBRIS);
         this.availableItems.add(Items.NETHERITE_SCRAP);
     }
-    
+
+    private void initializeAvailableEntities() {
+        this.availableEntities.clear();
+        this.availableEntities.addAll(ForgeRegistries.ENTITY_TYPES.getValues());
+        this.availableEntities.removeIf(type -> type == EntityType.PLAYER);
+        this.availableEntities.sort(Comparator.comparing(type -> {
+            ResourceLocation key = ForgeRegistries.ENTITY_TYPES.getKey(type);
+            return key != null ? key.toString() : "";
+        }));
+    }
+
     // Helper method to create Component with custom font
     private Component createTextWithCustomFont(String text) {
         return Component.literal(text)
@@ -366,63 +387,130 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
     
     private void setupEntityWishButtons() {
         int centerX = this.leftPos + this.imageWidth / 2;
-        // Center the buttons vertically in available space with consistent bottom margin
-        int bottomY = this.topPos + this.imageHeight - 40; // 20px margin from bottom
-        
-        Button backButton = createStyledButton(centerX - 40, bottomY, 35, 20,
+        int startY = this.topPos + 44;
+
+        int maxVisibleEntities = Math.min(ENTITIES_PER_PAGE, this.availableEntities.size() - entityScrollOffset);
+
+        for (int i = 0; i < maxVisibleEntities; i++) {
+            int entityIndex = entityScrollOffset + i;
+            if (entityIndex >= this.availableEntities.size()) break;
+
+            EntityType<?> entityType = this.availableEntities.get(entityIndex);
+            String entityName = entityType.getDescription().getString().toUpperCase();
+            if (entityName.length() > 20) {
+                entityName = entityName.substring(0, 17) + "...";
+            }
+
+            int buttonY = startY + (i * (ENTITY_BUTTON_HEIGHT + 2));
+            boolean isSelected = entityType == this.selectedEntity;
+
+            Button entityButton = createEntityButton(centerX - 90, buttonY, 180, ENTITY_BUTTON_HEIGHT,
+                    createTextWithCustomFont(entityName), entityType, isSelected, button -> {
+                        this.selectedEntity = entityType;
+                        this.clearButtons();
+                        this.setupButtonsForCurrentState();
+                    });
+
+            this.addRenderableWidget(entityButton);
+            currentButtons.add(entityButton);
+        }
+
+        if (entityScrollOffset > 0) {
+            Button scrollUpButton = createStyledButton(centerX + 95, startY, 20, 20,
+                    createTextWithCustomFont("^"), button -> {
+                        this.entityScrollOffset = Math.max(0, this.entityScrollOffset - 1);
+                        this.clearButtons();
+                        this.setupButtonsForCurrentState();
+                    });
+            this.addRenderableWidget(scrollUpButton);
+            currentButtons.add(scrollUpButton);
+        }
+
+        if (entityScrollOffset + ENTITIES_PER_PAGE < this.availableEntities.size()) {
+            Button scrollDownButton = createStyledButton(centerX + 95,
+                    startY + ((ENTITIES_PER_PAGE - 1) * (ENTITY_BUTTON_HEIGHT + 2)), 20, 20,
+                    createTextWithCustomFont("v"), button -> {
+                        this.entityScrollOffset = Math.min(
+                                Math.max(0, this.availableEntities.size() - ENTITIES_PER_PAGE),
+                                this.entityScrollOffset + 1);
+                        this.clearButtons();
+                        this.setupButtonsForCurrentState();
+                    });
+            this.addRenderableWidget(scrollDownButton);
+            currentButtons.add(scrollDownButton);
+        }
+
+        int bottomY = this.topPos + this.imageHeight - 40;
+
+        Button makeWishButton = createStyledButton(centerX - 80, bottomY, 70, 20,
+                createTextWithCustomFont("MAKE WISH"), button -> {
+                    if (this.selectedEntity != null) {
+                        MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
+                                new net.mcreator.madokraftmagica.kyubey.network.EntityWishPacket(
+                                        this.menu.getKyubey().getId(), this.selectedEntity));
+                        this.onClose();
+                    }
+                });
+        makeWishButton.active = this.selectedEntity != null;
+
+        Button backButton = createStyledButton(centerX - 5, bottomY, 35, 20,
                 createTextWithCustomFont("BACK"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.WISH_SELECTION);
+                    this.selectedEntity = null;
+                    this.entityScrollOffset = 0;
                     this.clearButtons();
                     this.setupButtonsForCurrentState();
                 });
-        
-        Button cancelButton = createStyledButton(centerX + 5, bottomY, 45, 20,
+
+        Button cancelButton = createStyledButton(centerX + 35, bottomY, 45, 20,
                 createTextWithCustomFont("CANCEL"), button -> {
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new ContractResponsePacket(this.menu.getKyubey().getId(), false));
                     this.onClose();
                 });
-        
+
+        this.addRenderableWidget(makeWishButton);
         this.addRenderableWidget(backButton);
         this.addRenderableWidget(cancelButton);
+        currentButtons.add(makeWishButton);
         currentButtons.add(backButton);
         currentButtons.add(cancelButton);
     }
-    
+
     private void setupEventWishButtons() {
         int centerX = this.leftPos + this.imageWidth / 2;
         // Center the event options and control buttons vertically
         // Content: 2 event buttons (40px) + 1 gap (5px) + bottom buttons (20px) + gap (15px) = 80px total
         // Center this in the available 120px space: start at y = 40 + (120-80)/2 = 60
         int startY = this.topPos + 60;
-        
+
         Button timeSetButton = createStyledButton(centerX - 80, startY, 160, 20,
                 createTextWithCustomFont("SET TIME COMMAND"), button -> {
                     // Future implementation
                 });
-        
+
         Button teleportButton = createStyledButton(centerX - 80, startY + 25, 160, 20,
                 createTextWithCustomFont("TELEPORT TO POSITION"), button -> {
                     // Future implementation
                 });
-        
+
         // Bottom buttons with consistent margin
         int bottomY = this.topPos + this.imageHeight - 40; // 20px margin from bottom
-        
+
         Button backButton = createStyledButton(centerX - 40, bottomY, 35, 20,
                 createTextWithCustomFont("BACK"), button -> {
                     this.menu.setCurrentState(KyubeyScreenState.WISH_SELECTION);
                     this.clearButtons();
                     this.setupButtonsForCurrentState();
                 });
-        
+
         Button cancelButton = createStyledButton(centerX + 5, bottomY, 45, 20,
                 createTextWithCustomFont("CANCEL"), button -> {
                     MadokraftmagicaMod.PACKET_HANDLER.sendToServer(
                             new ContractResponsePacket(this.menu.getKyubey().getId(), false));
                     this.onClose();
                 });
-        
+
         this.addRenderableWidget(timeSetButton);
         this.addRenderableWidget(teleportButton);
         this.addRenderableWidget(backButton);
@@ -432,7 +520,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         currentButtons.add(backButton);
         currentButtons.add(cancelButton);
     }
-    
+
     private Button createStyledButton(int x, int y, int width, int height, Component text, Button.OnPress onPress) {
         return new Button(x, y, width, height, text, onPress) {
             @Override
@@ -464,22 +552,46 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 // Different background color for selected item
                 int backgroundColor = isSelected ? 0xFFE6D7B0 : BUTTON_COLOR; // Light golden for selected
                 fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, backgroundColor);
-                
+
                 // Draw double button border
                 drawDoubleBorder(poseStack, this.x, this.y, this.width, this.height, BUTTON_BORDER_COLOR);
-                
-                // Draw item icon
+
+                // Draw item icon on the right
                 ItemStack itemStack = new ItemStack(item);
-                minecraft.getItemRenderer().renderGuiItem(itemStack, this.x + 2, this.y + 1);
-                
+                minecraft.getItemRenderer().renderGuiItem(itemStack, this.x + this.width - 18, this.y + 1);
+
                 // Draw button text with custom font (no shadow)
                 int textColor = this.active ? TEXT_COLOR : 0xFF666666;
                 String buttonText = this.getMessage().getString();
                 int textY = this.y + (this.height - 8) / 2;
-                
-                // Use our custom font drawing method to avoid shadows
+
                 Component customText = Component.literal(buttonText).withStyle(s -> s.withFont(CUSTOM_FONT));
-                minecraft.font.draw(poseStack, customText, this.x + 22, textY, textColor);
+                minecraft.font.draw(poseStack, customText, this.x + 6, textY, textColor);
+            }
+        };
+    }
+
+    private Button createEntityButton(int x, int y, int width, int height, Component text, EntityType<?> entityType, boolean isSelected, Button.OnPress onPress) {
+        return new Button(x, y, width, height, text, onPress) {
+            @Override
+            public void renderButton(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float partialTick) {
+                int backgroundColor = isSelected ? 0xFFE6D7B0 : BUTTON_COLOR;
+                fill(poseStack, this.x, this.y, this.x + this.width, this.y + this.height, backgroundColor);
+
+                drawDoubleBorder(poseStack, this.x, this.y, this.width, this.height, BUTTON_BORDER_COLOR);
+
+                SpawnEggItem spawnEgg = SpawnEggItem.byId(entityType);
+                if (spawnEgg != null) {
+                    ItemStack eggStack = new ItemStack(spawnEgg);
+                    minecraft.getItemRenderer().renderGuiItem(eggStack, this.x + this.width - 18, this.y + 1);
+                }
+
+                int textColor = this.active ? TEXT_COLOR : 0xFF666666;
+                String buttonText = this.getMessage().getString();
+                int textY = this.y + (this.height - 8) / 2;
+
+                Component customText = Component.literal(buttonText).withStyle(s -> s.withFont(CUSTOM_FONT));
+                minecraft.font.draw(poseStack, customText, this.x + 6, textY, textColor);
             }
         };
     }
@@ -542,7 +654,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         
         switch (state) {
             case CONTRACT_CONFIRMATION:
-                subtitle = createTextWithCustomFont("WANNA MAKE A CONTRACT?");
+                subtitle = createTextWithCustomFont("MAKE A CONTRACT WITH ME AND BECOME A MAGICAL GIRL!");
                 break;
             case ENTITY_WISH:
                 subtitle = createTextWithCustomFont("WISH FOR AN ENTITY");
@@ -575,6 +687,19 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 this.font.draw(poseStack, selectText, selectX, this.imageHeight - 50, 0xFF666666); // Gray color, moved up
             }
         }
+
+        if (state == KyubeyScreenState.ENTITY_WISH) {
+            if (this.selectedEntity != null) {
+                String selectedText = "SELECTED: " + this.selectedEntity.getDescription().getString().toUpperCase();
+                Component selectedComponent = createTextWithCustomFont(selectedText);
+                int selectedX = (this.imageWidth - this.font.width(selectedComponent)) / 2;
+                this.font.draw(poseStack, selectedComponent, selectedX, this.imageHeight - 50, 0xFF006600);
+            } else {
+                Component selectText = createTextWithCustomFont("SELECT AN ENTITY FROM THE LIST");
+                int selectX = (this.imageWidth - this.font.width(selectText)) / 2;
+                this.font.draw(poseStack, selectText, selectX, this.imageHeight - 50, 0xFF666666);
+            }
+        }
     }
 
     @Override
@@ -587,7 +712,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
         // Only handle scrolling when on item wish screen
         if (this.menu.getCurrentState() == KyubeyScreenState.ITEM_WISH) {
             int oldScrollOffset = this.scrollOffset;
-            
+
             if (delta > 0) {
                 // Scroll up
                 this.scrollOffset = Math.max(0, this.scrollOffset - 1);
@@ -595,7 +720,7 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 // Scroll down
                 this.scrollOffset = Math.min(Math.max(0, this.availableItems.size() - ITEMS_PER_PAGE), this.scrollOffset + 1);
             }
-            
+
             // Refresh buttons if scroll changed
             if (oldScrollOffset != this.scrollOffset) {
                 this.clearButtons();
@@ -603,7 +728,25 @@ public class KyubeyContractScreen extends AbstractContainerScreen<KyubeyContract
                 return true;
             }
         }
-        
+
+        if (this.menu.getCurrentState() == KyubeyScreenState.ENTITY_WISH) {
+            int oldScrollOffset = this.entityScrollOffset;
+
+            if (delta > 0) {
+                this.entityScrollOffset = Math.max(0, this.entityScrollOffset - 1);
+            } else if (delta < 0) {
+                this.entityScrollOffset = Math.min(
+                        Math.max(0, this.availableEntities.size() - ENTITIES_PER_PAGE),
+                        this.entityScrollOffset + 1);
+            }
+
+            if (oldScrollOffset != this.entityScrollOffset) {
+                this.clearButtons();
+                this.setupButtonsForCurrentState();
+                return true;
+            }
+        }
+
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
 }
