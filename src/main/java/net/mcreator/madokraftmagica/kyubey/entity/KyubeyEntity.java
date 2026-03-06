@@ -1,5 +1,7 @@
 package net.mcreator.madokraftmagica.kyubey.entity;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -21,20 +23,25 @@ import software.bernie.geckolib3.core.controller.AnimationController;
 import software.bernie.geckolib3.core.event.predicate.AnimationEvent;
 import software.bernie.geckolib3.core.manager.AnimationData;
 import software.bernie.geckolib3.core.manager.AnimationFactory;
+import software.bernie.geckolib3.util.GeckoLibUtil;
 import net.mcreator.madokraftmagica.kyubey.menu.KyubeyContractMenuProvider;
 
 import javax.annotation.Nonnull;
+import java.util.UUID;
 
 public class KyubeyEntity extends PathfinderMob implements IAnimatable {
-    private AnimationFactory factory;
+    private final AnimationFactory factory;
     private Player interactingPlayer = null;
     private int interactionCooldown = 0;
     private boolean isInteracting = false;
     private boolean wasMoving = false; // Track previous movement state
+    private UUID ownerUuid;
+    private String homeBiomeKey = "";
+    private boolean shouldFollowOwner = false;
 
     public KyubeyEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
-        this.factory = new AnimationFactory(this); // Keeping deprecated for now, still works
+        this.factory = GeckoLibUtil.createFactory(this);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -96,6 +103,18 @@ public class KyubeyEntity extends PathfinderMob implements IAnimatable {
     @Override
     public void tick() {
         super.tick();
+
+        if (!this.level.isClientSide && shouldFollowOwner && !isInteracting && ownerUuid != null && this.level instanceof ServerLevel serverLevel) {
+            Player owner = serverLevel.getPlayerByUUID(ownerUuid);
+            if (owner != null && owner.isAlive()) {
+                double distanceSqr = this.distanceToSqr(owner);
+                if (distanceSqr > 64.0D) {
+                    this.getNavigation().moveTo(owner, 1.1D);
+                } else if (distanceSqr < 25.0D) {
+                    this.getNavigation().stop();
+                }
+            }
+        }
 
         if (interactionCooldown > 0) {
             interactionCooldown--;
@@ -173,5 +192,47 @@ public class KyubeyEntity extends PathfinderMob implements IAnimatable {
     @Override
     public AnimationFactory getFactory() {
         return this.factory;
+    }
+
+    public void setOwnerUuid(UUID ownerUuid) {
+        this.ownerUuid = ownerUuid;
+    }
+
+    public UUID getOwnerUuid() {
+        return ownerUuid;
+    }
+
+    public void setHomeBiomeKey(String homeBiomeKey) {
+        this.homeBiomeKey = homeBiomeKey == null ? "" : homeBiomeKey;
+    }
+
+    public String getHomeBiomeKey() {
+        return homeBiomeKey;
+    }
+
+    public void setShouldFollowOwner(boolean shouldFollowOwner) {
+        this.shouldFollowOwner = shouldFollowOwner;
+    }
+
+    public boolean shouldFollowOwner() {
+        return shouldFollowOwner;
+    }
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        if (ownerUuid != null) {
+            tag.putUUID("ManagedOwner", ownerUuid);
+        }
+        tag.putString("ManagedBiome", homeBiomeKey);
+        tag.putBoolean("ManagedFollow", shouldFollowOwner);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        ownerUuid = tag.hasUUID("ManagedOwner") ? tag.getUUID("ManagedOwner") : null;
+        homeBiomeKey = tag.getString("ManagedBiome");
+        shouldFollowOwner = tag.getBoolean("ManagedFollow");
     }
 }
