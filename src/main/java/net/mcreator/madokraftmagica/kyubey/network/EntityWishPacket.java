@@ -11,6 +11,8 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.mcreator.madokraftmagica.MadokraftmagicaMod;
 import net.mcreator.madokraftmagica.kyubey.entity.KyubeyEntity;
+import net.mcreator.madokraftmagica.kyubey.system.SoulGemContractHandler;
+import net.mcreator.madokraftmagica.karma.KarmaData;
 
 import java.util.function.Supplier;
 
@@ -43,6 +45,11 @@ public class EntityWishPacket {
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
             if (player == null) {
+                return;
+            }
+
+            if (KarmaData.isContracted(player)) {
+                player.sendSystemMessage(Component.literal("Kyubey refuses: your soul is already under contract."));
                 return;
             }
 
@@ -82,10 +89,10 @@ public class EntityWishPacket {
                 spawned.moveTo(spawnX, spawnY, spawnZ, player.getYRot(), 0.0F);
                 level.addFreshEntity(spawned);
 
+                SoulGemContractHandler.finalizeContractIfNeeded(player);
                 player.sendSystemMessage(Component.literal("Your wish has been granted!"));
             });
         });
         return true;
     }
 }
-
