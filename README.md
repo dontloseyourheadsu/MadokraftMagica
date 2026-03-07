@@ -1,98 +1,152 @@
 # MadokraftMagica
 
-A Minecraft Forge mod project targeting Minecraft 1.19.2, built with Gradle and managed with MCreator.
+## Versions
 
-This repository contains:
-- A Gradle-based Forge mod project (Java 17).
-- An MCreator workspace (`madokraftmagica.mcreator`) and `elements/` folder for generated content.
-- Forge MDK 43.5.0 integration for Minecraft 1.19.2.
+- Minecraft: `1.19.2`
+- Forge: `43.5.0`
+- Java: `17`
 
-If you’d like to help, contributions are very welcome! See “Contributing” below for how to get started.
+## Quick Start
 
----
+```bash
+git clone https://github.com/dontloseyourheadsu/MadokraftMagica.git
+cd MadokraftMagica
+./gradlew build
+```
 
-## Requirements
+Run dev client:
 
-- Java Development Kit (JDK) 17
-- Git
-- An IDE (IntelliJ IDEA recommended; VS Code and Eclipse also work)
-- Minecraft Forge toolchain (provided via Gradle wrapper)
-- Optional: MCreator (if you plan to contribute content via the visual editor)
-  - Open the included `madokraftmagica.mcreator` workspace file
+```bash
+./gradlew runClient
+```
 
-Target versions:
-- Minecraft: 1.19.2
-- Forge: 43.5.0
+Build jar:
 
----
+```bash
+./gradlew build
+```
 
-## Getting Started
+Output jar: `build/libs/`
 
-1. Clone the repository
-   - `git clone https://github.com/dontloseyourheadsu/MadokraftMagica.git`
-   - `cd MadokraftMagica`
+## Core Gameplay Systems
 
-2. Configure JDK 17 in your IDE or environment
+### 1) Hidden Karma (Destiny Weight)
 
-3. First build (downloads dependencies)
-   - macOS/Linux: `./gradlew build`
-   - Windows: `gradlew.bat build`
+Each player has a hidden karma value stored server-side.
 
-4. Open the project in your IDE as a Gradle project
+- Karma increases by `+100` on player death.
+- Karma increases by `+1` when the player returns to full health (once per full-health cycle).
+- Karma cap: `50,000`.
+- Karma is not shown to the player directly.
 
----
+### 2) Kyubey Biome Lifecycle (Overworld Only)
 
-## Running in Development
+Kyubey is managed per player.
 
-- Run the client:
-  - macOS/Linux: `./gradlew runClient`
-  - Windows: `gradlew.bat runClient`
+- Kyubey only spawns in the Overworld.
+- One managed Kyubey exists per player.
+- Kyubey spawns/repositions in the same biome as the player.
+- Kyubey never appears too close; target distance is outside a 4-chunk radius.
+- If Kyubey dies, a new managed Kyubey is spawned for that player in the same biome flow.
 
-- Run the server (optional):
-  - macOS/Linux: `./gradlew runServer`
-  - Windows: `gradlew.bat runServer`
+Pre-contract behavior (karma-driven):
+- Starts appearing at karma `>= 1000`.
+- Appearance interval speeds up from karma `10000` onward, every additional `5000` karma.
+- At high karma, Kyubey can follow behavior based on thresholds.
 
-- Build a distributable JAR:
-  - macOS/Linux: `./gradlew build`
-  - Windows: `gradlew.bat build`
-  - Output is in `build/libs/`
+Post-contract behavior (not karma-driven):
+- Kyubey still appears around the player in biome-safe positions.
+- Kyubey no longer uses karma thresholds for follow/frequency decisions.
 
-Note: If you’re using IntelliJ IDEA with Forge, you usually don’t need to run extra “gen runs” tasks in modern MDK setups—the provided Gradle tasks should work out of the box.
+### 3) Contract + Wish Rules
 
----
+A contract is created when a wish is successfully granted.
 
-## Project Structure
+- Each player can only complete **one contract/wish cycle**.
+- After a player is contracted, Kyubey refuses all future wishes.
+- Contracted players cannot open a new wish flow for a second reward.
 
-- `src/main/java` — Java source code for the mod
-- `src/main/resources` — Resources (assets, data packs, `mods.toml`, etc.)
-- `elements/` — MCreator element definitions
-- `.mcreator/` — MCreator internal configuration
-- `madokraftmagica.mcreator` — MCreator workspace file
-- `build.gradle`, `settings.gradle`, `gradle.properties` — Gradle configuration
-- `gradlew`, `gradlew.bat`, `gradle/` — Gradle wrapper
+Supported wish paths:
+- Item wish (`ItemWishPacket`)
+- Entity wish (`EntityWishPacket`)
 
-MCreator notes:
-- Content defined in `elements/` and the MCreator workspace generates code/resources under `src/`.
-- Direct edits to generated files may be overwritten by MCreator regeneration. Prefer adding/editing elements via MCreator when applicable, then regenerate.
+(Event wish UI may exist but should be treated as unfinished until implemented server-side.)
 
----
+### 4) Soul Gem Ownership and Binding
+
+At contract completion, the player receives one bound soul gem.
+
+- The soul gem is bound to player UUID and a unique contract ID.
+- The gem color is stored and used by the magic HUD.
+- Players cannot replace their bound gem with another contract gem.
+- Pickup checks enforce ownership for bound gems.
+- Inventory hard limit: max `2` soul gems total.
+
+### 5) Soul Gem Loss Penalty
+
+If a contracted player no longer has their bound soul gem:
+
+- A `100` second grace window starts.
+- If not recovered in time:
+  - contract is marked severed,
+  - inventory is wiped,
+  - player is killed.
+- After severance, contract recovery is blocked.
+
+### 6) Magic Resource
+
+When contract completes:
+
+- `magicMax = karmaAtContract` (1:1 mapping).
+- `magicCurrent = magicMax`.
+- player karma is reset to `0`.
+- post-contract karma gains are blocked.
+
+Magic consumption:
+
+- Passive drain: `-10` magic every `30` seconds.
+- Regeneration drain:
+  - heals `1` heart every `0.5` seconds,
+  - costs `200` magic per heart.
+
+### 7) Magic HUD
+
+A client HUD bar is synced from server state.
+
+- Shown only when contracted player has their valid bound soul gem.
+- Located bottom-left.
+- Fill color matches soul gem color.
+- Gold border.
+- Displays remaining magic percentage.
+
+## Technical Notes
+
+Important classes:
+
+- `src/main/java/net/mcreator/madokraftmagica/karma/KarmaData.java`
+- `src/main/java/net/mcreator/madokraftmagica/kyubey/system/KyubeyLifecycleHandler.java`
+- `src/main/java/net/mcreator/madokraftmagica/kyubey/system/SoulGemContractHandler.java`
+- `src/main/java/net/mcreator/madokraftmagica/gems/SoulGemUtil.java`
+- `src/main/java/net/mcreator/madokraftmagica/client/MagicHudOverlay.java`
+- `src/main/java/net/mcreator/madokraftmagica/kyubey/network/ItemWishPacket.java`
+- `src/main/java/net/mcreator/madokraftmagica/kyubey/network/EntityWishPacket.java`
+
+## Development
+
+Compile locally:
+
+```bash
+./gradlew compileJava --no-daemon
+```
+
+Run full build:
+
+```bash
+./gradlew build
+```
 
 ## Contributing
 
-There are multiple ways to contribute:
-- Report bugs and crashes
-- Suggest features or improvements
-- Create textures, models, sounds, or localization files
-- Implement new gameplay content (items/blocks/entities/procedures) via MCreator
-- Write or refactor Java code, fix issues, improve performance
-- Improve documentation
-
-Before you start:
-- Check existing issues: https://github.com/dontloseyourheadsu/MadokraftMagica/issues
-- If your change is significant, please open an issue to discuss your approach first.
-
-### Development Setup
-
-- For code-centric changes:
-  1. Set up JDK 17 and your IDE
-  2. Build once
+- Open an issue for major gameplay changes before implementation.
+- Keep server-authoritative logic in server handlers/packets.
+- Preserve per-player ownership and anti-duplication checks for contract items.
