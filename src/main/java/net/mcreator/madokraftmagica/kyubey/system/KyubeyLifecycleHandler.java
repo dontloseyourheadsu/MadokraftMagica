@@ -36,6 +36,7 @@ public class KyubeyLifecycleHandler {
     private static final int MIN_DISTANCE_BLOCKS = 64;
     private static final int MIN_SPAWN_RADIUS_BLOCKS = 72;
     private static final int MAX_SPAWN_RADIUS_BLOCKS = 128;
+    private static final long CONTRACTED_APPEARANCE_INTERVAL_TICKS = 1200L;
 
     private static final Map<UUID, Long> NEXT_APPEARANCE_TICK = new HashMap<>();
 
@@ -75,7 +76,7 @@ public class KyubeyLifecycleHandler {
         }
 
         int karma = KarmaData.getKarma(owner);
-        if (karma < KARMA_TO_START) {
+        if (karma < KARMA_TO_START && !KarmaData.isContracted(owner)) {
             KarmaData.setKyubeyUuid(owner, null);
             return;
         }
@@ -105,6 +106,7 @@ public class KyubeyLifecycleHandler {
             return;
         }
 
+        handleFullRegenKarma(player);
         manageKyubeyForPlayer(player);
     }
 
@@ -141,8 +143,9 @@ public class KyubeyLifecycleHandler {
             return;
         }
 
-        int karma = KarmaData.getKarma(player);
-        if (karma < KARMA_TO_START) {
+        boolean contracted = KarmaData.isContracted(player);
+        int destiny = KarmaData.getDestinyLevel(player);
+        if (destiny < KARMA_TO_START && !contracted) {
             removeManagedKyubey(player, managedKyubey);
             return;
         }
@@ -152,7 +155,7 @@ public class KyubeyLifecycleHandler {
             return;
         }
 
-        boolean shouldFollow = karma >= FOLLOW_KARMA;
+        boolean shouldFollow = !contracted && destiny >= FOLLOW_KARMA;
 
         if (managedKyubey != null) {
             managedKyubey.setShouldFollowOwner(shouldFollow);
@@ -191,7 +194,10 @@ public class KyubeyLifecycleHandler {
         managedKyubey.setHomeBiomeKey(playerBiomeKey);
         managedKyubey.setShouldFollowOwner(shouldFollow);
         KarmaData.setKyubeyBiome(player, playerBiomeKey);
-        NEXT_APPEARANCE_TICK.put(player.getUUID(), gameTime + getAppearanceIntervalTicks(karma));
+        long nextInterval = contracted
+                ? CONTRACTED_APPEARANCE_INTERVAL_TICKS
+                : getAppearanceIntervalTicks(destiny);
+        NEXT_APPEARANCE_TICK.put(player.getUUID(), gameTime + nextInterval);
     }
 
     private static KyubeyEntity getManagedKyubey(ServerPlayer player) {
@@ -238,7 +244,7 @@ public class KyubeyLifecycleHandler {
                 level.random.nextFloat() * 360.0F, 0.0F);
         kyubey.setOwnerUuid(player.getUUID());
         kyubey.setHomeBiomeKey(requiredBiomeKey);
-        kyubey.setShouldFollowOwner(KarmaData.getKarma(player) >= FOLLOW_KARMA);
+        kyubey.setShouldFollowOwner(!KarmaData.isContracted(player) && KarmaData.getDestinyLevel(player) >= FOLLOW_KARMA);
         kyubey.finalizeSpawn(level, level.getCurrentDifficultyAt(candidatePos), MobSpawnType.EVENT, null, null);
 
         if (!level.addFreshEntity(kyubey)) {
@@ -248,8 +254,10 @@ public class KyubeyLifecycleHandler {
 
         KarmaData.setKyubeyUuid(player, kyubey.getUUID());
         KarmaData.setKyubeyBiome(player, requiredBiomeKey);
-        NEXT_APPEARANCE_TICK.put(player.getUUID(),
-                level.getGameTime() + getAppearanceIntervalTicks(KarmaData.getKarma(player)));
+        long nextInterval = KarmaData.isContracted(player)
+                ? CONTRACTED_APPEARANCE_INTERVAL_TICKS
+                : getAppearanceIntervalTicks(KarmaData.getDestinyLevel(player));
+        NEXT_APPEARANCE_TICK.put(player.getUUID(), level.getGameTime() + nextInterval);
     }
 
     private static BlockPos findSpawnPosition(ServerLevel level, ServerPlayer player, String requiredBiomeKey) {
@@ -305,5 +313,19 @@ public class KyubeyLifecycleHandler {
         long interval = 1200L - (steps * 100L);
         return Math.max(200L, interval);
     }
-}
 
+    private static void handleFullRegenKarma(ServerPlayer player) {
+        boolean fullHealth = player.getHealth() >= player.getMaxHealth();
+        if (!fullHealth) {
+            KarmaData.setFullRegenReady(player, true);
+            return;
+        }
+
+        if (!KarmaData.isFullRegenReady(player)) {
+            return;
+        }
+
+        KarmaData.addKarma(player, 1);
+        KarmaData.setFullRegenReady(player, false);
+    }
+}

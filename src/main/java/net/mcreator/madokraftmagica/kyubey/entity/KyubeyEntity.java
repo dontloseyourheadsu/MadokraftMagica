@@ -25,9 +25,11 @@ import software.bernie.geckolib3.core.manager.AnimationData;
 import software.bernie.geckolib3.core.manager.AnimationFactory;
 import software.bernie.geckolib3.util.GeckoLibUtil;
 import net.mcreator.madokraftmagica.kyubey.menu.KyubeyContractMenuProvider;
+import net.mcreator.madokraftmagica.karma.KarmaData;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
+import net.minecraft.network.chat.Component;
 
 public class KyubeyEntity extends PathfinderMob implements IAnimatable {
     private final AnimationFactory factory;
@@ -62,6 +64,11 @@ public class KyubeyEntity extends PathfinderMob implements IAnimatable {
     @Override
     public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand) {
         if (!this.level.isClientSide && hand == InteractionHand.MAIN_HAND) {
+            if (KarmaData.isContracted(player)) {
+                player.sendSystemMessage(Component.literal("Kyubey says: our contract is complete. No second wish."));
+                return InteractionResult.SUCCESS;
+            }
+
             if (interactionCooldown <= 0 && !isInteracting) {
                 // Start interaction state
                 this.startInteraction(player);
